@@ -13,8 +13,8 @@ namespace cw3.Controllers
     [ApiController]
     public class StudentsController : ControllerBase
     {
-        private string ConnString = "Data Source=db-mssql;Initial Catalog=s18732;Integrated Security=True";
-        private readonly IDbService _dbService;
+        private const string ConnString = "Data Source=db-mssql;Initial Catalog=s18732;Integrated Security=True";
+        //private readonly IDbService _dbService;
         public StudentsController(/*IDbService dbService*/)
         {
            // _dbService = dbService;
@@ -34,7 +34,7 @@ namespace cw3.Controllers
                 SqlDataReader dr = com.ExecuteReader();
                 while (dr.Read()){
                     var st = new Student();
-                    st.IndexNumber = (int)dr["IndexNumber"];
+                    st.IndexNumber = dr["IndexNumber"].ToString();
                     st.FirstName = dr["FirstName"].ToString();
                     st.LastName = dr["LastName"].ToString();
                     st.BirthDate = (DateTime)dr["BirthDate"];
@@ -47,39 +47,35 @@ namespace cw3.Controllers
             //return Ok(_dbService.GetStudents());
         }
         [HttpGet("{id}")]
-        public IActionResult GetStudent(int id)
+        public IActionResult GetStudent(string id)
         {
-            var result = new List<Enrollment>();
+            //var result = new List<Enrollment>();
 
             using (SqlConnection con = new SqlConnection(ConnString))
             using (SqlCommand com = new SqlCommand())
             {
                 com.Connection = con;
-                com.CommandText = "select * from enrollment where IdEnrollment = (select IdEnrollment from student where indexnumber = " + id + ");";
+                com.CommandText = "select * from enrollment where IdEnrollment = (select IdEnrollment from student where indexnumber = @index);";
+                //com.CommandText = "select * from students where indexnumber='"+id"';";
+
+                com.Parameters.AddWithValue("index", id);
 
                 con.Open();
                 SqlDataReader dr = com.ExecuteReader();
-                while (dr.Read())
+                if (dr.Read())
                 {
                     var en = new Enrollment();
                     en.IdEnrollment = (int)dr["IdEnrollment"];
                     en.Semester = (int)dr["Semester"];
                     en.IdStudy = (int)dr["IdStudy"];
                     en.StartDate = (DateTime)dr["StartDate"];
-                    result.Add(en);
+                    //result.Add(en);
+                    return Ok(en);
                 }
 
-                return Ok(result);
+                //return Ok(result);
+                return NotFound();
 
-                /*if(id == 1)
-                {
-                    return Ok("Kowalski");
-                }else if (id == 2)
-                {
-                    return Ok("Malewski");
-                }
-
-                return NotFound("Nie znaleziono studenta");*/
             }
         }
         [HttpPost]
