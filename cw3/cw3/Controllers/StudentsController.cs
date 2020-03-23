@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using cw3.Models;
 using cw3.DAL;
+using System.Data.SqlClient;
 
 namespace cw3.Controllers
 {
@@ -12,35 +13,81 @@ namespace cw3.Controllers
     [ApiController]
     public class StudentsController : ControllerBase
     {
+        private string ConnString = "Data Source=db-mssql;Initial Catalog=s18732;Integrated Security=True";
         private readonly IDbService _dbService;
-        public StudentsController(IDbService dbService)
+        public StudentsController(/*IDbService dbService*/)
         {
-            _dbService = dbService;
+           // _dbService = dbService;
         }
         [HttpGet]
-        public IActionResult GetStudents(string orderBy) //action method
+        public IActionResult GetStudents() //action method
         {
-            return Ok(_dbService.GetStudents());
+            var result = new List<Student>();
+
+            using (SqlConnection con = new SqlConnection(ConnString))
+            using (SqlCommand com = new SqlCommand())
+            {
+                com.Connection = con;
+                com.CommandText = "select * from student";
+
+                con.Open();
+                SqlDataReader dr = com.ExecuteReader();
+                while (dr.Read()){
+                    var st = new Student();
+                    st.IndexNumber = (int)dr["IndexNumber"];
+                    st.FirstName = dr["FirstName"].ToString();
+                    st.LastName = dr["LastName"].ToString();
+                    st.BirthDate = (DateTime)dr["BirthDate"];
+                    st.IdEnrollment = (int)dr["IdEnrollment"];
+                    result.Add(st);
+                }
+
+                return Ok(result);
+            }
+            //return Ok(_dbService.GetStudents());
         }
         [HttpGet("{id}")]
         public IActionResult GetStudent(int id)
         {
-            if(id == 1)
-            {
-                return Ok("Kowalski");
-            }else if (id == 2)
-            {
-                return Ok("Malewski");
-            }
+            var result = new List<Enrollment>();
 
-            return NotFound("Nie znaleziono studenta");
+            using (SqlConnection con = new SqlConnection(ConnString))
+            using (SqlCommand com = new SqlCommand())
+            {
+                com.Connection = con;
+                com.CommandText = "select * from enrollment where IdEnrollment = (select IdEnrollment from student where indexnumber = " + id + ");";
+
+                con.Open();
+                SqlDataReader dr = com.ExecuteReader();
+                while (dr.Read())
+                {
+                    var en = new Enrollment();
+                    en.IdEnrollment = (int)dr["IdEnrollment"];
+                    en.Semester = (int)dr["Semester"];
+                    en.IdStudy = (int)dr["IdStudy"];
+                    en.StartDate = (DateTime)dr["StartDate"];
+                    result.Add(en);
+                }
+
+                return Ok(result);
+
+                /*if(id == 1)
+                {
+                    return Ok("Kowalski");
+                }else if (id == 2)
+                {
+                    return Ok("Malewski");
+                }
+
+                return NotFound("Nie znaleziono studenta");*/
+            }
         }
         [HttpPost]
         public IActionResult CreateStudent(Student student)
         {
             //... add to database
             //... generating index number
-            student.IndexNumber = $"s{new Random().Next(1, 20000)}";
+            //student.IndexNumber = $"s{new Random().Next(1, 20000)}";
             return Ok(student);
         }
         [HttpPut("{id}")]
