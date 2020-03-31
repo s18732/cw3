@@ -10,6 +10,6 @@ namespace cw3.Models
         public int IdEnrollment { get; set; }
         public int Semester { get; set; }
         public int IdStudy { get; set; }
-        public DateTime StartDate { get; set; }
+        public string StartDate { get; set; }
     }
 }

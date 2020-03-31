@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using cw3.Models;
 using cw3.DAL;
 using System.Data.SqlClient;
+using cw3.Services;
 
 namespace cw3.Controllers
 {
@@ -14,76 +15,33 @@ namespace cw3.Controllers
     public class StudentsController : ControllerBase
     {
         private const string ConnString = "Data Source=db-mssql;Initial Catalog=s18732;Integrated Security=True";
-        //private readonly IDbService _dbService;
-        public StudentsController(/*IDbService dbService*/)
+        private IStudentsDbService _service;
+        public StudentsController(IStudentsDbService service)
         {
-           // _dbService = dbService;
+            _service = service;
         }
         [HttpGet]
-        public IActionResult GetStudents() //action method
+        public IActionResult GetStudents()
         {
-            var result = new List<Student>();
-
-            using (SqlConnection con = new SqlConnection(ConnString))
-            using (SqlCommand com = new SqlCommand())
-            {
-                com.Connection = con;
-                com.CommandText = "select * from student";
-
-                con.Open();
-                SqlDataReader dr = com.ExecuteReader();
-                while (dr.Read()){
-                    var st = new Student();
-                    st.IndexNumber = dr["IndexNumber"].ToString();
-                    st.FirstName = dr["FirstName"].ToString();
-                    st.LastName = dr["LastName"].ToString();
-                    st.BirthDate = (DateTime)dr["BirthDate"];
-                    st.IdEnrollment = (int)dr["IdEnrollment"];
-                    result.Add(st);
-                }
-
-                return Ok(result);
-            }
-            //return Ok(_dbService.GetStudents());
+            List<Student> l =_service.GetStudents();
+            return Ok(l);
+            
         }
         [HttpGet("{id}")]
         public IActionResult GetStudent(string id)
         {
-            //var result = new List<Enrollment>();
-
-            using (SqlConnection con = new SqlConnection(ConnString))
-            using (SqlCommand com = new SqlCommand())
-            {
-                com.Connection = con;
-                com.CommandText = "select * from enrollment where IdEnrollment = (select IdEnrollment from student where indexnumber = @index);";
-                //com.CommandText = "select * from students where indexnumber='"+id"';";
-
-                com.Parameters.AddWithValue("index", id);
-
-                con.Open();
-                SqlDataReader dr = com.ExecuteReader();
-                if (dr.Read())
-                {
-                    var en = new Enrollment();
-                    en.IdEnrollment = (int)dr["IdEnrollment"];
-                    en.Semester = (int)dr["Semester"];
-                    en.IdStudy = (int)dr["IdStudy"];
-                    en.StartDate = (DateTime)dr["StartDate"];
-                    //result.Add(en);
-                    return Ok(en);
-                }
-
-                //return Ok(result);
+            Enrollment en = _service.GetStudent(id);
+            if (en == null)
                 return NotFound();
-
-            }
+            else
+                return Ok(en);
         }
+
+
+
         [HttpPost]
         public IActionResult CreateStudent(Student student)
         {
-            //... add to database
-            //... generating index number
-            //student.IndexNumber = $"s{new Random().Next(1, 20000)}";
             return Ok(student);
         }
         [HttpPut("{id}")]
