@@ -14,5 +14,6 @@ namespace cw3.Services
         public string PostEnrollment(Student student);
         public List<Student> GetStudents();
         public Enrollment GetStudent(string id);
+        public Boolean CheckIndex(string id);
     }
 }

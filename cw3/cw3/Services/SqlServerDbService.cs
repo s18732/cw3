@@ -256,5 +256,29 @@ namespace cw3.Services
 
             }
         }
+
+        public bool CheckIndex(string id)
+        {
+            using (SqlConnection con = new SqlConnection(ConnString))
+            using (SqlCommand com = new SqlCommand())
+            {
+                com.Connection = con;
+
+                con.Open();
+
+                com.CommandText = "select count(1) jest from student where IndexNumber = @id;";
+                com.Parameters.AddWithValue("id", id);
+                var dr = com.ExecuteReader();
+                int jest = 0;
+                if (dr.Read())
+                {
+                    jest = (int)dr["jest"];
+                }
+                if (jest >= 1)
+                    return true;
+                else
+                    return false;
+            }
+        }
     }
 }
