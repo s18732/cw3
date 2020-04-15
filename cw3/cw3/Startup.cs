@@ -30,7 +30,7 @@ namespace cw3
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddTransient<IStudentsDbService, SqlServerDbService>();
-            services.AddControllers();
+            services.AddControllers().AddXmlSerializerFormatters();
 
             services.AddSwaggerGen(config =>
             {
