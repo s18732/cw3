@@ -1,4 +1,5 @@
 ﻿using cw3.DTOs.Requests;
+using cw3.DTOs.Responses;
 using cw3.Models;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -15,5 +16,6 @@ namespace cw3.Services
         public List<Student> GetStudents();
         public Enrollment GetStudent(string id);
         public Boolean CheckIndex(string id);
+        public TokenResponse Login(LoginRequest req);
     }
 }

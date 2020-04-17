@@ -7,6 +7,8 @@ using cw3.Models;
 using cw3.DAL;
 using System.Data.SqlClient;
 using cw3.Services;
+using cw3.DTOs.Requests;
+using cw3.DTOs.Responses;
 
 namespace cw3.Controllers
 {
@@ -36,14 +38,31 @@ namespace cw3.Controllers
             else
                 return Ok(en);
         }
-
-
-
         [HttpPost]
+        public IActionResult Login(LoginRequest request)
+        {
+            TokenResponse tok = _service.Login(request);
+            if(tok != null)
+            {
+                return Ok(new
+                {
+                    token = tok.JWTtoken,
+                    refreshToken = tok.RefreshToken
+                });
+            }
+            else
+            {
+                return Unauthorized();
+            }
+            
+        }
+
+
+        /*[HttpPost]
         public IActionResult CreateStudent(Student student)
         {
             return Ok(student);
-        }
+        }*/
         [HttpPut("{id}")]
         public IActionResult PutStudent(int id)
         {

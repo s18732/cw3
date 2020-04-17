@@ -1,10 +1,16 @@
 ﻿using cw3.DTOs.Requests;
+using cw3.DTOs.Responses;
 using cw3.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 
 
@@ -12,7 +18,12 @@ namespace cw3.Services
 {
     public class SqlServerDbService : IStudentsDbService
     {
+        public IConfiguration Configuration { get; set; }
         private const string ConnString = "Data Source=db-mssql;Initial Catalog=s18732;Integrated Security=True";
+        public SqlServerDbService(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
         public string PostEnrollment(Student student)
         {
             if (student.FirstName.Length == 0 || student.LastName.Length == 0 || student.IndexNumber.Length == 0 || student.Studies.Length == 0 || student.BirthDate.Length == 0)
@@ -278,6 +289,66 @@ namespace cw3.Services
                     return true;
                 else
                     return false;
+            }
+        }
+
+        public TokenResponse Login(LoginRequest req)
+        {
+            int jest = 0;
+            using (SqlConnection con = new SqlConnection(ConnString))
+            using (SqlCommand com = new SqlCommand())
+            {
+                com.Connection = con;
+
+                con.Open();
+
+                com.CommandText = "select count(1) jest from student where IndexNumber = @id and Password = @pass;";
+                com.Parameters.AddWithValue("id", req.Login);
+                com.Parameters.AddWithValue("pass", req.Haslo);
+                var dr = com.ExecuteReader();
+                if (dr.Read())
+                {
+                    jest = (int)dr["jest"];
+                }
+            }
+            //Console.WriteLine(req.Login);
+            if (jest > 0)
+            {
+                var claims = new Claim[2];
+                if (req.Login.Equals("s1"))
+                {
+                    claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, req.Login),
+                new Claim(ClaimTypes.Role, "employee")
+            };
+                }
+                else
+                {
+                    claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, req.Login),
+                new Claim(ClaimTypes.Role, "student")
+            };
+                }
+
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["SecretKey"]));
+                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+                var token = new JwtSecurityToken(issuer: "Gakko", audience: "Students", claims: claims, expires: DateTime.Now.AddMinutes(10), signingCredentials: creds);
+
+                var token2 = new JwtSecurityTokenHandler().WriteToken(token);
+                var refreshToken = Guid.NewGuid();
+
+                return (new TokenResponse
+                {
+                    JWTtoken = token2,
+                    RefreshToken = refreshToken
+                });
+            }
+            else
+            {
+                return null;
             }
         }
     }

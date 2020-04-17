@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using cw3.DTOs.Requests;
 using cw3.Models;
 using cw3.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace cw3.Controllers
@@ -21,6 +22,7 @@ namespace cw3.Controllers
             _service = service;
         }
         [Route("api/enrollments")]
+        [Authorize(Roles ="employee")]
         [HttpPost]
         public IActionResult PostEnrollment(Student student)
         {
@@ -31,6 +33,7 @@ namespace cw3.Controllers
                 return BadRequest(s);
         }
         [Route("api/enrollments/promotions")]
+        [Authorize(Roles = "employee")]
         [HttpPost]
         public IActionResult PostPromotion(PostPromotion req)
         {
