@@ -17,5 +17,6 @@ namespace cw3.Services
         public Enrollment GetStudent(string id);
         public Boolean CheckIndex(string id);
         public TokenResponse Login(LoginRequest req);
+        public JWTTokenResponse Refresh(RefreshRequest req);
     }
 }

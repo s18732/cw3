@@ -340,6 +340,26 @@ namespace cw3.Services
                 var token2 = new JwtSecurityTokenHandler().WriteToken(token);
                 var refreshToken = Guid.NewGuid();
 
+                using (SqlConnection con = new SqlConnection(ConnString))
+                using (SqlCommand com = new SqlCommand())
+                {
+                    con.Open();
+                    SqlTransaction trans = con.BeginTransaction();
+                    com.Connection = con;
+                    com.Transaction = trans;
+                    try
+                    {
+                        com.CommandText = "update student set RefreshToken = @refreshToken where IndexNumber = @id";
+                        com.Parameters.AddWithValue("id", req.Login);
+                        com.Parameters.AddWithValue("refreshToken", refreshToken);
+                        com.ExecuteNonQuery();
+                        trans.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        trans.Rollback();
+                    }
+                }
                 return (new TokenResponse
                 {
                     JWTtoken = token2,
@@ -351,5 +371,64 @@ namespace cw3.Services
                 return null;
             }
         }
+
+        public JWTTokenResponse Refresh(RefreshRequest req)
+        {
+            string id = "";
+            using (SqlConnection con = new SqlConnection(ConnString))
+            using (SqlCommand com = new SqlCommand())
+            {
+                com.Connection = con;
+
+                con.Open();
+
+                com.CommandText = "select IndexNumber from student where refreshtoken = @rt;";
+                com.Parameters.AddWithValue("rt", req.RefreshToken);
+                var dr = com.ExecuteReader();
+                if (dr.Read())
+                {
+                    id = dr["IndexNumber"].ToString();
+                }
+            }
+            if (id != null)
+            {
+                {
+                    var claims = new Claim[2];
+                    if (id.Equals("s1"))
+                    {
+                        claims = new[]
+                        {
+                            new Claim(ClaimTypes.NameIdentifier, id),
+                            new Claim(ClaimTypes.Role, "employee")
+                        };
+                    }
+                    else
+                    {
+                        claims = new[]
+                        {
+                            new Claim(ClaimTypes.NameIdentifier, id),
+                            new Claim(ClaimTypes.Role, "student")
+                        };
+                    }
+
+                    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["SecretKey"]));
+                    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+                    var token = new JwtSecurityToken(issuer: "Gakko", audience: "Students", claims: claims, expires: DateTime.Now.AddMinutes(10), signingCredentials: creds);
+
+                    var token2 = new JwtSecurityTokenHandler().WriteToken(token);
+
+                    return (new JWTTokenResponse
+                    {
+                        JWTToken = token2
+                    });
+                }
+            }
+            else
+            {
+                return null;
+            }
+        } 
+        
     }
 }

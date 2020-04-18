@@ -12,7 +12,7 @@ using cw3.DTOs.Responses;
 
 namespace cw3.Controllers
 {
-    [Route("api/students")]
+    
     [ApiController]
     public class StudentsController : ControllerBase
     {
@@ -22,6 +22,7 @@ namespace cw3.Controllers
         {
             _service = service;
         }
+        [Route("api/students")]
         [HttpGet]
         public IActionResult GetStudents()
         {
@@ -29,6 +30,7 @@ namespace cw3.Controllers
             return Ok(l);
             
         }
+        [Route("api/students")]
         [HttpGet("{id}")]
         public IActionResult GetStudent(string id)
         {
@@ -38,6 +40,7 @@ namespace cw3.Controllers
             else
                 return Ok(en);
         }
+        [Route("api/students")]
         [HttpPost]
         public IActionResult Login(LoginRequest request)
         {
@@ -55,6 +58,24 @@ namespace cw3.Controllers
                 return Unauthorized();
             }
             
+        }
+        [Route("api/students/refresh")]
+        [HttpPost]
+        public IActionResult Refresh(RefreshRequest request)
+        {
+            JWTTokenResponse tok = _service.Refresh(request);
+            if (tok != null)
+            {
+                return Ok(new
+                {
+                    token = tok.JWTToken,
+                });
+            }
+            else
+            {
+                return Unauthorized();
+            }
+
         }
 
 
