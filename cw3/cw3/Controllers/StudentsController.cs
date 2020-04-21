@@ -78,6 +78,20 @@ namespace cw3.Controllers
             }
 
         }
+        [Route("api/students/password")]
+        [HttpPost]
+        public IActionResult CreatePassword(LoginRequest request)
+        {
+            if (_service.CreatePassword(request))
+            {
+                return Created("", "");
+            }
+            else
+            {
+                return BadRequest();
+            }
+
+        }
 
 
         /*[HttpPost]

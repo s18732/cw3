@@ -294,7 +294,8 @@ namespace cw3.Services
 
         public TokenResponse Login(LoginRequest req)
         {
-            int jest = 0;
+            string salt = "";
+            string hash = "";
             using (SqlConnection con = new SqlConnection(ConnString))
             using (SqlCommand com = new SqlCommand())
             {
@@ -302,17 +303,19 @@ namespace cw3.Services
 
                 con.Open();
 
-                com.CommandText = "select count(1) jest from student where IndexNumber = @id and Password = @pass;";
+                com.CommandText = "select password, salt from student where IndexNumber = @id;";
                 com.Parameters.AddWithValue("id", req.Login);
-                com.Parameters.AddWithValue("pass", req.Haslo);
                 var dr = com.ExecuteReader();
                 if (dr.Read())
                 {
-                    jest = (int)dr["jest"];
+                    salt = dr["salt"].ToString();
+                    hash = dr["password"].ToString();
                 }
             }
+            var jest = IStudentsDbService.Validate(req.Haslo, salt, hash);
+
             //Console.WriteLine(req.Login);
-            if (jest > 0)
+            if (jest)
             {
                 var claims = new Claim[2];
                 if (req.Login.Equals("s1"))
@@ -450,7 +453,40 @@ namespace cw3.Services
             {
                 return null;
             }
-        } 
-        
+        }
+
+        public Boolean CreatePassword(LoginRequest req)
+        {
+            var id = req.Login;
+            var pass = req.Haslo;
+
+            var salt = IStudentsDbService.CreateSalt();
+            var s = IStudentsDbService.Create(pass, salt);
+
+            using (SqlConnection con = new SqlConnection(ConnString))
+            using (SqlCommand com = new SqlCommand())
+            {
+                con.Open();
+                SqlTransaction trans = con.BeginTransaction();
+                com.Connection = con;
+                com.Transaction = trans;
+                try
+                {
+                    com.CommandText = "update student set Salt = @salt, Password = @pass where IndexNumber = @id";
+                    com.Parameters.AddWithValue("id", id);
+                    com.Parameters.AddWithValue("salt", salt);
+                    com.Parameters.AddWithValue("pass", s);
+                    com.ExecuteNonQuery();
+                    trans.Commit();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    trans.Rollback();
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 }
