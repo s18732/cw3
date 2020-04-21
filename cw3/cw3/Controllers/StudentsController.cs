@@ -63,12 +63,13 @@ namespace cw3.Controllers
         [HttpPost]
         public IActionResult Refresh(RefreshRequest request)
         {
-            JWTTokenResponse tok = _service.Refresh(request);
+            TokenResponse tok = _service.Refresh(request);
             if (tok != null)
             {
                 return Ok(new
                 {
-                    token = tok.JWTToken,
+                    token = tok.JWTtoken,
+                    refreshToken = tok.RefreshToken
                 });
             }
             else

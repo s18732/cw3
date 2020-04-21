@@ -334,7 +334,7 @@ namespace cw3.Services
 
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["SecretKey"]));
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
+                
                 var token = new JwtSecurityToken(issuer: "Gakko", audience: "Students", claims: claims, expires: DateTime.Now.AddMinutes(10), signingCredentials: creds);
 
                 var token2 = new JwtSecurityTokenHandler().WriteToken(token);
@@ -372,7 +372,7 @@ namespace cw3.Services
             }
         }
 
-        public JWTTokenResponse Refresh(RefreshRequest req)
+        public TokenResponse Refresh(RefreshRequest req)
         {
             string id = "";
             using (SqlConnection con = new SqlConnection(ConnString))
@@ -417,10 +417,32 @@ namespace cw3.Services
                     var token = new JwtSecurityToken(issuer: "Gakko", audience: "Students", claims: claims, expires: DateTime.Now.AddMinutes(10), signingCredentials: creds);
 
                     var token2 = new JwtSecurityTokenHandler().WriteToken(token);
+                    var refreshToken = Guid.NewGuid();
 
-                    return (new JWTTokenResponse
+                    using (SqlConnection con = new SqlConnection(ConnString))
+                    using (SqlCommand com = new SqlCommand())
                     {
-                        JWTToken = token2
+                        con.Open();
+                        SqlTransaction trans = con.BeginTransaction();
+                        com.Connection = con;
+                        com.Transaction = trans;
+                        try
+                        {
+                            com.CommandText = "update student set RefreshToken = @refreshToken where IndexNumber = @id";
+                            com.Parameters.AddWithValue("id", id);
+                            com.Parameters.AddWithValue("refreshToken", refreshToken);
+                            com.ExecuteNonQuery();
+                            trans.Commit();
+                        }
+                        catch (Exception ex)
+                        {
+                            trans.Rollback();
+                        }
+                    }
+                    return (new TokenResponse
+                    {
+                        JWTtoken = token2,
+                        RefreshToken = refreshToken
                     });
                 }
             }
