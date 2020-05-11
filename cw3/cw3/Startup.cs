@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using cw3.DAL;
 using cw3.Middlewares;
+using cw3.Models2;
 using cw3.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -32,6 +33,8 @@ namespace cw3
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddScoped<IDbService2, EfDbService>();
+            services.AddDbContext<s18732Context>();
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     .AddJwtBearer(options =>
                     {
